@@ -1,0 +1,165 @@
+<!--
+
+    DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
+
+    Copyright (c) 2011-2015 Oracle and/or its affiliates. All rights reserved.
+
+    The contents of this file are subject to the terms of either the GNU
+    General Public License Version 2 only ("GPL") or the Common Development
+    and Distribution License("CDDL") (collectively, the "License").  You
+    may not use this file except in compliance with the License.  You can
+    obtain a copy of the License at
+    https://glassfish.dev.java.net/public/CDDL+GPL_1_1.html
+    or packager/legal/LICENSE.txt.  See the License for the specific
+    language governing permissions and limitations under the License.
+
+    When distributing the software, include this License Header Notice in each
+    file and include the License file at packager/legal/LICENSE.txt.
+
+    GPL Classpath Exception:
+    Oracle designates this particular file as subject to the "Classpath"
+    exception as provided by Oracle in the GPL Version 2 section of the License
+    file that accompanied this code.
+
+    Modifications:
+    If applicable, add the following below the License Header, with the fields
+    enclosed by brackets [] replaced by your own identifying information:
+    "Portions Copyright [year] [name of copyright owner]"
+
+    Contributor(s):
+    If you wish your version of this file to be governed by only the CDDL or
+    only the GPL Version 2, indicate your decision by adding "[Contributor]
+    elects to include this software in this distribution under the [CDDL or GPL
+    Version 2] license."  If you don't indicate a single choice of license, a
+    recipient has the option to distribute your version of this file under
+    either the CDDL, the GPL Version 2 or to extend the choice of license to
+    its licensees as provided above.  However, if you add GPL Version 2 code
+    and therefore, elected the GPL Version 2 license, then the option applies
+    only if the new code is made subject to such option by the copyright
+    holder.
+
+-->
+
+<FindBugsFilter>
+    <!--
+        Sure, these inner classes might be more efficient if they
+        were static, but the code would be harder to read too.
+    -->
+    <Match>
+        <Bug pattern="SIC_INNER_SHOULD_BE_STATIC_ANON"/>
+    </Match>
+
+    <!-- 
+        We use switch "fall-through" with no defaults on purpose for stateful
+        parsing.
+    -->
+    <Match>
+        <Or>
+            <Bug pattern="SF_SWITCH_FALLTHROUGH"/>
+            <Bug pattern="SF_SWITCH_NO_DEFAULT"/>
+        </Or>
+    </Match>
+
+    <!--
+        We ignore Exception all over the place.  Mostly it's on purpose.
+    -->
+    <Match>
+        <Bug pattern="DE_MIGHT_IGNORE"/>
+    </Match>
+
+    <!--
+        And sometimes we catch Exception even though it's not throw,
+        just to be sure to catch any problems that might occur.
+    -->
+    <Match>
+        <Bug pattern="REC_CATCH_EXCEPTION"/>
+    </Match>
+
+    <!--
+        Arrays are passed in and out of internal APIs all over the place.
+        Mostly this is just fine.  Finding the few places where this might
+        be a real issue is a problem for another day.
+    -->
+    <Match>
+        <Or>
+            <Bug pattern="EI_EXPOSE_REP"/>
+            <Bug pattern="EI_EXPOSE_REP2"/>
+        </Or>
+    </Match>
+
+    <!--
+        Yes, zero length arrays are preferred, but this isn't worth fixing.
+    -->
+    <Match>
+        <Bug pattern="PZLA_PREFER_ZERO_LENGTH_ARRAYS"/>
+    </Match>
+
+    <!--
+        Lots of classes extend serializable classes but we never depend
+        on their serialized state, so we don't worry about this.
+    -->
+    <Match>
+        <Bug pattern="SE_NO_SERIALVERSIONID"/>
+    </Match>
+
+    <!-- Synchronization has been reviewed and is okay. -->
+    <Match>
+        <Bug pattern="UG_SYNC_SET_UNSYNC_GET"/>
+        <Or>
+            <Class name="org.glassfish.grizzly.utils.Holder$LazyHolder"/>
+            <Class name="org.glassfish.grizzly.utils.Holder$LazyIntHolder"/>
+        </Or>
+    </Match>
+
+    <!-- Synchronization has been reviewed and is okay. -->
+    <Match>
+        <Bug pattern="IS2_INCONSISTENT_SYNC"/>
+        <Or>
+            <Class name="org.glassfish.grizzly.utils.Holder$LazyHolder"/>
+            <Class name="org.glassfish.grizzly.utils.Holder$LazyIntHolder"/>
+            <Class name="org.glassfish.grizzly.websockets.WebSocketEngine" />
+            <Class name="org.glassfish.grizzly.http.server.NetworkListener" />
+            <Class name="org.glassfish.grizzly.http2.Http2State" />
+        </Or>
+    </Match>
+
+    <!-- These classes are copied from OpenJDK.  Ignore the issues. -->
+    <Match>
+        <Or>
+            <Class name="org.glassfish.grizzly.utils.LinkedTransferQueue$QNode"/>
+            <Class name="org.glassfish.grizzly.utils.ConcurrentHashMapV8"/>
+            <Class name="org.glassfish.grizzly.utils.ConcurrentHashMapV8$TreeBin"/>
+        </Or>
+    </Match>
+
+    <!-- We're not worried about this. -->
+    <Match>
+        <Or>
+            <Bug pattern="NM_SAME_SIMPLE_NAME_AS_INTERFACE" />
+            <Bug pattern="NM_FIELD_NAMING_CONVENTION"/>
+        </Or>
+    </Match>
+
+    <Match>
+        <Bug pattern="DM_EXIT" />
+        <Or>
+            <Class name="org.glassfish.grizzly.samples.udpmulticast.MulticastChat" />
+        </Or>
+    </Match>
+
+    <Match>
+        <Bug pattern="SE_BAD_FIELD" />
+        <Or>
+            <Class name="org.glassfish.grizzly.samples.websockets.WebSocketsServlet" />
+        </Or>
+    </Match>
+
+    <!-- Not worried about atomicity - only visibility -->
+    <Match>
+        <Bug pattern="VO_VOLATILE_INCREMENT" />
+        <Or>
+            <Class name="org.glassfish.grizzly.nio.SelectorRunner" />
+        </Or>
+    </Match>
+
+</FindBugsFilter>

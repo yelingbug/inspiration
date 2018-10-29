@@ -1,0 +1,20 @@
+Manifest-Version: 1.0
+Bnd-LastModified: 1477248976351
+Build-Jdk: 1.8.0_60
+Built-By: elecharny
+Bundle-Description: Apache MINA is a network application framework which
+  helps users develop high performance and highly scalable network appli
+ cations easily.  It provides an abstract event-driven asynchronous API 
+ over various transports such as TCP/IP and UDP/IP via Java NIO.
+Bundle-DocURL: http://mina.apache.org/
+Bundle-License: http://www.apache.org/licenses/LICENSE-2.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Apache MINA JavaBeans Integration
+Bundle-SymbolicName: org.apache.mina.integration.beans
+Bundle-Vendor: Apache MINA Project
+Bundle-Version: 2.0.16
+Created-By: Apache Maven Bundle Plugin
+Export-Package: org.apache.mina.integration.beans;version="2.0.16"
+Import-Package: org.apache.mina.transport.vmpipe;version="2.0.16"
+Require-Capability: osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=1.7))"
+Tool: Bnd-2.3.0.201405100607

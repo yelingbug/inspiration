@@ -1,0 +1,44 @@
+description = "gRPC: ALTS"
+
+sourceCompatibility = 1.7
+targetCompatibility = 1.7
+
+buildscript {
+    repositories {
+        maven {
+            // The google mirror is less flaky than mavenCentral()
+            url "https://maven-central.storage-download.googleapis.com/repos/central/data/"
+        }
+    }
+    dependencies {
+        classpath libraries.protobuf_plugin
+    }
+}
+
+dependencies {
+    compile project(':grpc-core'),
+            project(':grpc-netty'),
+            project(':grpc-protobuf'),
+            project(':grpc-stub'),
+            libraries.lang,
+            libraries.protobuf
+    runtime project(':grpc-grpclb')
+    testCompile libraries.guava,
+                libraries.guava_testlib,
+                libraries.junit,
+                libraries.mockito,
+                libraries.truth
+    signature 'org.codehaus.mojo.signature:java17:1.0@signature'
+}
+
+configureProtoCompilation()
+
+[compileJava, compileTestJava].each() {
+    // ALTS retuns a lot of futures that we mostly don't care about.
+    // protobuf calls valueof. Will be fixed in next release (google/protobuf#4046)
+    it.options.compilerArgs += ["-Xlint:-deprecation", "-Xep:FutureReturnValueIgnored:OFF"]
+}
+
+javadoc {
+    exclude 'io/grpc/alts/internal/**'
+}

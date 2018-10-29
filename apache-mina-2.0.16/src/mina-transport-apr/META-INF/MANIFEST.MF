@@ -1,0 +1,28 @@
+Manifest-Version: 1.0
+Bnd-LastModified: 1477248933105
+Build-Jdk: 1.8.0_60
+Built-By: elecharny
+Bundle-Description: Apache MINA is a network application framework which
+  helps users develop high performance and highly scalable network appli
+ cations easily.  It provides an abstract event-driven asynchronous API 
+ over various transports such as TCP/IP and UDP/IP via Java NIO.
+Bundle-DocURL: http://mina.apache.org/
+Bundle-License: http://www.apache.org/licenses/LICENSE-2.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Apache MINA APR Transport
+Bundle-SymbolicName: org.apache.mina.transport.apr
+Bundle-Vendor: Apache MINA Project
+Bundle-Version: 2.0.16
+Created-By: Apache Maven Bundle Plugin
+Export-Package: org.apache.mina.transport.socket.apr;version="2.0.16";us
+ es:="org.apache.mina.core.buffer,org.apache.mina.core.file,org.apache.m
+ ina.core.filterchain,org.apache.mina.core.polling,org.apache.mina.core.
+ service,org.apache.mina.core.session,org.apache.mina.transport.socket"
+Import-Package: org.apache.mina.core;version="2.0.16",org.apache.mina.co
+ re.buffer;version="2.0.16",org.apache.mina.core.file;version="2.0.16",o
+ rg.apache.mina.core.filterchain;version="2.0.16",org.apache.mina.core.p
+ olling;version="2.0.16",org.apache.mina.core.service;version="2.0.16",o
+ rg.apache.mina.core.session;version="2.0.16",org.apache.mina.transport.
+ socket;version="2.0.16",org.apache.tomcat.jni;version="9.0.0.M11"
+Require-Capability: osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=1.7))"
+Tool: Bnd-2.3.0.201405100607

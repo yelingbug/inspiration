@@ -1,0 +1,26 @@
+Manifest-Version: 1.0
+Bnd-LastModified: 1477248946694
+Build-Jdk: 1.8.0_60
+Built-By: elecharny
+Bundle-Description: Apache MINA is a network application framework which
+  helps users develop high performance and highly scalable network appli
+ cations easily.  It provides an abstract event-driven asynchronous API 
+ over various transports such as TCP/IP and UDP/IP via Java NIO.
+Bundle-DocURL: http://mina.apache.org/
+Bundle-License: http://www.apache.org/licenses/LICENSE-2.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Apache MINA Compression Filter
+Bundle-SymbolicName: org.apache.mina.filter.compression
+Bundle-Vendor: Apache MINA Project
+Bundle-Version: 2.0.16
+Created-By: Apache Maven Bundle Plugin
+Export-Package: org.apache.mina.filter.compression;version="2.0.16";uses
+ :="org.apache.mina.core.filterchain,org.apache.mina.core.session,org.ap
+ ache.mina.core.write,org.apache.mina.filter.util"
+Import-Package: org.apache.mina.core.buffer;version="2.0.16",org.apache.
+ mina.core.filterchain;version="2.0.16",org.apache.mina.core.session;ver
+ sion="2.0.16",org.apache.mina.core.write;version="2.0.16",org.apache.mi
+ na.filter.util;version="2.0.16",com.jcraft.jzlib;version="1.1.3",org.sl
+ f4j;version="1.7"
+Require-Capability: osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=1.7))"
+Tool: Bnd-2.3.0.201405100607
