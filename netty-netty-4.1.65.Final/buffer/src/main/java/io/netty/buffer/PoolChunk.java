@@ -489,9 +489,9 @@ final class PoolChunk<T> implements PoolChunkMetric {
 
             //基于从chunk中分配的一个run，去创建PoolSubpage，并且放到subpages数组中。
             // 比如第一次分配，并假定sizeIdx=6/size=112来说，runOffset=0
-            //从chunk中分配了7个pageSize的run，放入到subpages[0].在PoolSubpage初始化时，
-            //计算7个pageSize的run如果按照112来分配，即maxNumElems=runSize/elemSize=7个pageSize/112，
-            //同时初始化maxNumElems个长度的
+            //从chunk中分配了7个pageSize的run，放入到subpages[0].
+            //在PoolSubpage初始化时，初始化runSize/elemSize >>> 6个位图，这个subpage会
+            //挂在subpages对应的elemSize(sizeIdx计算出来的)的链表中。
             PoolSubpage<T> subpage = new PoolSubpage<T>(head, this, pageShifts, runOffset,
                                runSize(pageShifts, runHandle), elemSize);
 

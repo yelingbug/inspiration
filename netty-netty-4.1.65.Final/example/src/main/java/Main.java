@@ -203,6 +203,9 @@ public class Main {
         System.out.println(guizhen(2011));
 
         System.out.println(pages2pageIdxCompute(7, false));
+        long f = 4L;
+        f |= 1L << 2;
+        System.out.println(f);
         /*long f = (long) 2048 << 34;
         System.out.println(Long.toBinaryString(f));*/
         //AbstractByteBufAllocator.DEFAULT.

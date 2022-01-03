@@ -65,13 +65,13 @@ final class PoolSubpage<T> implements PoolSubpageMetric {
          * 倍，这个倍数如果用long型来表示需要多少个long，从下面maxNumElems计算逻辑来看，是runSize/elemSize，
          * 而elemSize最小是16(SizeClasses中最小size)，因此bitmap可以表示的long个数的最大值就是需要runSize/16/64，
          * 其实就是runSize/64/16=runSize >>> 6 + LOG2_QUANTUM，但实际上肯定要比这个小，因为elemSize最小是16。
-         * 所以bitmapLength是实际的长度。
+         * 但elemSize肯定>16，所以对实际的elemSize来说，bitmapLength是实际的长度。
          *
          * 摘录的，供理解用，和代码不符：
          *   Subpage位图分布信息数组，数组长度8个，因为：
          *     1个long 8字节64位，即一个 long 可表示 64 个坑是否被占用。那么长度为8的 long 数组，最多可表示 512 个坑.
          *     考虑到最小的Subpage=16B，pageSize=8KB，8KB / 16B = 512个，单个Page最多可分成 512 个SubPage，使用
-         *     数组长度为8的long数组， *   正好最多表示 512 的位图。
+         *     数组长度为8的long数组，正好最多表示 512 的位图。
          *
          * commented by Yelin.G on 2021.12.27
          */
@@ -99,6 +99,9 @@ final class PoolSubpage<T> implements PoolSubpageMetric {
                 bitmap[i] = 0;
             }
         }
+        /**
+         * 挂载到链表中.
+         */
         addToPool(head);
     }
 
@@ -111,16 +114,16 @@ final class PoolSubpage<T> implements PoolSubpageMetric {
         }
 
         final int bitmapIdx = getNextAvail();
-        int q = bitmapIdx >>> 6;
-        int r = bitmapIdx & 63;
+        int q = bitmapIdx >>> 6;//计算在一个long型值中的bit位置，如果bitmapIdx=66，那么q=1，即64个bit中的索引值是1，第2个位置
+        int r = bitmapIdx & 63;//计算顺序值，如果bitmapIdx=66，那么r=2，第2个位置.
         assert (bitmap[q] >>> r & 1) == 0;
-        bitmap[q] |= 1L << r;
+        bitmap[q] |= 1L << r;//把这个位置为1
 
         if (-- numAvail == 0) {
-            removeFromPool();
+            removeFromPool();//可用数-1，并从链表中移除
         }
 
-        return toHandle(bitmapIdx);
+        return toHandle(bitmapIdx);//更新handle中的bitmap
     }
 
     /**
@@ -199,8 +202,9 @@ final class PoolSubpage<T> implements PoolSubpageMetric {
         final int bitmapLength = this.bitmapLength;
         for (int i = 0; i < bitmapLength; i ++) {
             long bits = bitmap[i];
+            //存在一个bit位不为1，即存在可用分配内存。
             if (~bits != 0) {
-                return findNextAvail0(i, bits);
+                return findNextAvail0(i, bits);//找到可用的bit在long型数组中的索引位置
             }
         }
         return -1;
@@ -208,18 +212,27 @@ final class PoolSubpage<T> implements PoolSubpageMetric {
 
     private int findNextAvail0(int i, long bits) {
         final int maxNumElems = this.maxNumElems;
-        final int baseVal = i << 6;
+        final int baseVal = i << 6;//计算出bitmap中i对应的第几个long的偏移
 
-        for (int j = 0; j < 64; j ++) {
-            if ((bits & 1) == 0) {
-                int val = baseVal | j;
+        for (int j = 0; j < 64; j ++) {//因为一个long是64个字节，即64个bit
+            if ((bits & 1) == 0) {//(不断右移)检查最低位是否为0，为0表示可用
+                int val = baseVal | j;//可用的情况下，计算出val即在整个bitmapLength长度中的第几位
+                                      //举个例子：如果bitmapLength=8，即数组有8个long型元素，假定
+                                      //这里的i=1，那么bits就是bitmap[1]对应的long型，这里baseVal = 64
+                                      //遍历这个long型的64个bit(从低位开始)，判断bit是否为0，如果为0表示可用，
+                                      //假定第2个bit为0，那么64｜2=66，表示在整个bitmapLength长度的long型
+                                      //数组中，第66个bit是可用的，用图表示：
+                                      //xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx 第一个long(i=0)
+                                      //xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxx0x 第二个long(i=1)
+                                      //......
+                                      //
                 if (val < maxNumElems) {
-                    return val;
+                    return val;//按照上面的例子，这里应该就是66
                 } else {
                     break;
                 }
             }
-            bits >>>= 1;
+            bits >>>= 1;//比较完一个bit之后右移干掉，继续循环比较下一个
         }
         return -1;
     }
