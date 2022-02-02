@@ -316,6 +316,10 @@ final class PoolChunk<T> implements PoolChunkMetric {
         final long handle;
         if (sizeIdx <= arena.smallMaxSizeIdx) {
             // small
+
+            /**
+             * 如果是small，从{@link PoolArena#smallSubpagePools}中分配
+             */
             handle = allocateSubpage(sizeIdx);
             if (handle < 0) {
                 return false;
@@ -324,6 +328,11 @@ final class PoolChunk<T> implements PoolChunkMetric {
         } else {
             // normal
             // runSize must be multiple of pageSize
+            // 从sizeClasses对照表来看，>smallMaxSizeIdx之后确认都是8K的倍数(isMultiPage = 1)
+
+            /**
+             * 如果是normal，
+             */
             int runSize = arena.sizeIdx2size(sizeIdx);
             handle = allocateRun(runSize);
             if (handle < 0) {
@@ -343,6 +352,7 @@ final class PoolChunk<T> implements PoolChunkMetric {
         //还是以8192x7为例(即对应表size为112)，这里pages=7
         int pages = runSize >> pageShifts;
         //继续，找到pages=7对应的pageIdx，即pageIdx=6，发现对应的size就是57344(8192x7)，神奇不？
+        //或许跟计算runSize的时候必须要是基于sizeIdx计算出来的elemSize的pageSize的整数倍有关系？
         int pageIdx = arena.pages2pageIdx(pages);
 
         synchronized (runsAvail) {
@@ -393,6 +403,8 @@ final class PoolChunk<T> implements PoolChunkMetric {
          *
          * 比如sizeIdx对应的size是112，因为pageSize(8192)/112不整除，一直网上倍数累加到8192x7/112=512，整除了，那么
          * runSize就是8192x7=57344
+         *
+         * 为什么runSize必须是基于elemSize的pageSize的整数倍？或许规整的目的是为了基于位运算在数据结构搜索的效率？
          *
          * commented by Yelin.G on 2021.12.29
          */
@@ -557,22 +569,31 @@ final class PoolChunk<T> implements PoolChunkMetric {
     }
 
     private long collapsePast(long handle) {
+        // 不断向前合并，直到不能合并为止
         for (;;) {
+            // #1 获取偏移量
             int runOffset = runOffset(handle);
+            // #2 获取拥有的page数量
             int runPages = runPages(handle);
 
+            // #3 根据「runOffset-1」末尾可用的run
             long pastRun = getAvailRunByOffset(runOffset - 1);
             if (pastRun == -1) {
+                // #3-1 没有相邻的 run，直接返回
                 return handle;
             }
 
+            // #4 存在相邻的 run
             int pastOffset = runOffset(pastRun);
             int pastPages = runPages(pastRun);
 
+            // #5 再一次判断是否是连续的: past的偏移量+页数量=run的偏移量
             //is continuous
             if (pastRun != handle && pastOffset + pastPages == runOffset) {
+                // #6 移除旧的run信息
                 //remove past run
                 removeAvailRun(pastRun);
+                // #7 生成新的handle
                 handle = toRunHandle(pastOffset, pastPages + runPages, 0);
             } else {
                 return handle;

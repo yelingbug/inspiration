@@ -417,6 +417,11 @@ public class PooledByteBufAllocator extends AbstractByteBufAllocator implements 
 
         final ByteBuf buf;
         if (heapArena != null) {
+            /**
+             * 获取当前线程的{@link PoolThreadCache}，获取{@link PoolThreadCache}的时候从{@link PoolArena}数组(
+             * {@link PooledByteBufAllocator}初始化的时候基于堆内存分配)中找一个线程数最少占用的{@link PoolArena}和
+             * {@link PoolThreadCache}关联绑定.
+             */
             buf = heapArena.allocate(cache, initialCapacity, maxCapacity);
         } else {
             buf = PlatformDependent.hasUnsafe() ?

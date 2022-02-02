@@ -137,7 +137,7 @@ final class PoolThreadCache {
             int max = Math.min(area.chunkSize, maxCachedBufferCapacity);
             /**
              * normal级别的从small级别的最大索引开始，并且小于{@link SizeClasses}表格大小，并且
-             * 不能超过chunkSIze和设置的maxCachedBufferCapacity(默认{@link PooledByteBufAllocator#DEFAULT_MAX_CACHED_BUFFER_CAPACITY}).
+             * 不能超过chunkSize和设置的maxCachedBufferCapacity(默认{@link PooledByteBufAllocator#DEFAULT_MAX_CACHED_BUFFER_CAPACITY}).
              * commented by Yelin.G on 2021.12.31
              */
             // Create as many normal caches as we support based on how many sizeIdx we have and what the upper

@@ -120,7 +120,7 @@ final class PoolSubpage<T> implements PoolSubpageMetric {
         bitmap[q] |= 1L << r;//把这个位置为1
 
         if (-- numAvail == 0) {
-            removeFromPool();//可用数-1，并从链表中移除
+            removeFromPool();//可用数-1，如果numAvail=0，表示没有可用，就从链表中移除
         }
 
         return toHandle(bitmapIdx);//更新handle中的bitmap

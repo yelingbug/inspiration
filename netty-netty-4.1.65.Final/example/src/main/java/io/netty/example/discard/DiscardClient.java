@@ -65,7 +65,7 @@ public final class DiscardClient {
 
             // Make the connection attempt.
             ChannelFuture f = b.connect(HOST, PORT).sync();
-
+            System.out.println("OK");
             // Wait until the connection is closed.
             f.channel().closeFuture().sync();
         } finally {

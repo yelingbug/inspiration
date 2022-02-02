@@ -46,7 +46,7 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 public final class TcpDnsClient {
-    private static final String QUERY_DOMAIN = "www.example.com";
+    private static final String QUERY_DOMAIN = "www.baidu.com";
     private static final int DNS_SERVER_PORT = 53;
     private static final String DNS_SERVER_HOST = "8.8.8.8";
 
@@ -95,6 +95,7 @@ public final class TcpDnsClient {
 
             final Channel ch = b.connect(DNS_SERVER_HOST, DNS_SERVER_PORT).sync().channel();
 
+            System.out.println(ch.isOpen() + ",,," + ch.isActive());
             int randomID = new Random().nextInt(60000 - 1000) + 1000;
             DnsQuery query = new DefaultDnsQuery(randomID, DnsOpCode.QUERY)
                     .setRecord(DnsSection.QUESTION, new DefaultDnsQuestion(QUERY_DOMAIN, DnsRecordType.A));

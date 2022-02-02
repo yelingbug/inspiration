@@ -95,10 +95,16 @@ abstract class PoolArena<T> extends SizeClasses implements PoolArenaMetric {
             smallSubpagePools[i] = newSubpagePoolHead();
         }
 
+        /**
+         * qInit->q000->q025->q050->q075->q100
+         *
+         * 注意：q000的之前不是qInit，但是qInit的next是q000，qInit之前是自己
+         */
         q100 = new PoolChunkList<T>(this, null, 100, Integer.MAX_VALUE, chunkSize);
         q075 = new PoolChunkList<T>(this, q100, 75, 100, chunkSize);
         q050 = new PoolChunkList<T>(this, q075, 50, 100, chunkSize);
         q025 = new PoolChunkList<T>(this, q050, 25, 75, chunkSize);
+        //q000和qInit中的maxCapacity是一样的
         q000 = new PoolChunkList<T>(this, q025, 1, 50, chunkSize);
         qInit = new PoolChunkList<T>(this, q000, Integer.MIN_VALUE, 25, chunkSize);
 
@@ -163,16 +169,33 @@ abstract class PoolArena<T> extends SizeClasses implements PoolArenaMetric {
     private void tcacheAllocateSmall(PoolThreadCache cache, PooledByteBuf<T> buf, final int reqCapacity,
                                      final int sizeIdx) {
 
+        /**
+         * 对small级别分配：
+         *
+         * {@link PoolThreadCache}中初始化small(sizeClass中前39)和normal(sizeClass中从40开始)级别的类型为{@link io.netty.buffer.PoolThreadCache.MemoryRegionCache}
+         * 数组，大小分别为39和剩下的值，其中每个{@link io.netty.buffer.PoolThreadCache.MemoryRegionCache}带有一个队列，队列大小基于
+         * small和normal级别分别为smallCacheSize(默认是{@link PooledByteBufAllocator#DEFAULT_SMALL_CACHE_SIZE}=256)和
+         * normalCacheSize(默认是{@link PooledByteBufAllocator#DEFAULT_NORMAL_CACHE_SIZE}=64)
+         *
+         * 这里首先尝试从当前线程{@link PoolThreadCache}中分配，基于sizeIdx找到{@link PoolThreadCache#smallSubPageHeapCaches}中
+         * 的某一个{@link io.netty.buffer.PoolThreadCache.MemoryRegionCache}并从队列中尝试获取一个{@link io.netty.buffer.PoolThreadCache.MemoryRegionCache.Entry}，
+         * 如果不为空，从Entry中获取{@link PoolChunk}/nioBuffer/handle，并从chunk中基于nioBuffer/handle分配，其实就是基于chunk中的空间
+         * 从nioBuffer中划归一块给当前请求。
+         */
         if (cache.allocateSmall(this, buf, reqCapacity, sizeIdx)) {
             // was able to allocate out of the cache so move on
             return;
         }
 
-        /*
+        /**
          * Synchronize on the head. This is needed as {@link PoolChunk#allocateSubpage(int)} and
          * {@link PoolChunk#free(long)} may modify the doubly linked list as well.
+         *
+         * 从small级别(39)的{@link smallSubpagePools}数组中基于sizeIdx弄出一个，{@link PoolSubpage}挂了一个
+         * 链表：
+         * 如果是第一次，尝试从normal级别中分配
          */
-        final PoolSubpage<T> head = smallSubpagePools[sizeIdx];
+        final PoolSubpage<T> head = smallSubpagePools[sizeIdx];//head是个头节点，不放数据
         final boolean needsNormalAllocation;
         synchronized (head) {
             final PoolSubpage<T> s = head.next;
@@ -208,6 +231,22 @@ abstract class PoolArena<T> extends SizeClasses implements PoolArenaMetric {
 
     // Method must be called inside synchronized(this) { ... } block
     private void allocateNormal(PooledByteBuf<T> buf, int reqCapacity, int sizeIdx, PoolThreadCache threadCache) {
+        /**
+         * 先从「PoolChunkList」链表中选取某一个「PoolChunk」进行内存分配，如果实在找不到合适的「PoolChunk」对象，
+         * 那就只能新建一个船新的「PoolChunk」对象，在完成内存分配后需要添加到对应的PoolChunkList链表中。
+         * 内部有多个「PoolChunkList」链表，q050、q025表示内部的「PoolChunk」最低的使用率。
+         * Netty 会先从q050开始分配，并非从q000开始。
+         * 这是因为如果从q000开始分配内存的话会导致有大部分的PoolChunk面临频繁的创建和销毁，造成内存分配的性能降低。
+         *
+         * 第一次肯定都分配不了，所以new一个chunk，并从chunk中分配，同时加入到qInit中.
+         *
+         * 为什么链表是这样的顺序排列的？
+         *
+         * 原因在于：随着chunk中page的不断分配和释放，会导致很多碎片内存段，大大增加了之后分配一段连续内存的失败率，
+         * 针对这种情况，可以把内存使用量较大的chunk放到PoolChunkList链表更后面，这样就便于内存的成功分配。
+         * 首先是在q050这个内存使用量在[50,100]的PoolChunkList中来尝试分配，如果分配失败，可能原因是需要分配的内存过大，
+         * 则然后就会依次尝试在内存使用量较小的PoolChunkList来完成内存分配。
+         */
         if (q050.allocate(buf, reqCapacity, sizeIdx, threadCache) ||
             q025.allocate(buf, reqCapacity, sizeIdx, threadCache) ||
             q000.allocate(buf, reqCapacity, sizeIdx, threadCache) ||
